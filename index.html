@@ -17,12 +17,14 @@ body{
 }
 .header{padding:30px;}
 h1{color:#8b5cf6;font-size:32px;}
+
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-  gap:20px;
+  gap:clamp(16px,2.5vw,32px);
   padding:30px;
 }
+
 .card{
   background:linear-gradient(145deg,#111,#131313);
   border-radius:16px;
@@ -39,6 +41,7 @@ h1{color:#8b5cf6;font-size:32px;}
   transform:translateY(-5px);
   box-shadow:0 0 40px rgba(139,92,246,.4);
 }
+
 .index{
   position:absolute;
   top:12px;
@@ -47,6 +50,7 @@ h1{color:#8b5cf6;font-size:32px;}
   font-weight:bold;
   font-size:14px;
 }
+
 .iconBox{
   width:48px;
   height:48px;
@@ -57,11 +61,13 @@ h1{color:#8b5cf6;font-size:32px;}
   justify-content:center;
   margin-bottom:15px;
 }
+
 .iconBox img{
   width:26px;
   height:26px;
   filter:brightness(0) saturate(100%) invert(41%) sepia(71%) saturate(660%) hue-rotate(230deg);
 }
+
 .title{font-size:20px;margin-bottom:8px;}
 .about{color:#aaa;font-size:14px;}
 </style>
@@ -77,20 +83,25 @@ h1{color:#8b5cf6;font-size:32px;}
 <div class="grid" id="tools">Loading...</div>
 
 <script>
+const defaultIcon = `
+<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="none" viewBox="0 0 24 24">
+  <path stroke="#7A51D5" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+    d="M10 3v4a1 1 0 0 1-1 1H5m4 10v-2m3 2v-6m3 6v-3m4-11v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Z"/>
+</svg>`;
+
 const host = location.hostname;
 const user = host.replace(".github.io", "");
 const repoMatch = window.location.pathname.match(/^\/([^/]+)/);
 const repo = repoMatch ? repoMatch[1] : "";
 
-let branch = "main";
-let baseAPI = "";
+let branch="main", baseAPI="";
 
 async function detectBranch(){
   for(const b of ["main","master"]){
     const r = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/tools?ref=${b}`);
     if(r.ok){
-      branch = b;
-      baseAPI = `https://api.github.com/repos/${user}/${repo}/contents/tools?ref=${b}`;
+      branch=b;
+      baseAPI=`https://api.github.com/repos/${user}/${repo}/contents/tools?ref=${b}`;
       return true;
     }
   }
@@ -118,19 +129,16 @@ function loadTool(name,index){
   const descURL = `https://raw.githubusercontent.com/${user}/${repo}/${branch}/tools/${name}/description.json`;
   const iconURL = `https://raw.githubusercontent.com/${user}/${repo}/${branch}/tools/${name}/icon.svg`;
 
-  fetch(descURL)
-  .then(r=>r.json())
-  .then(d=>{
+  fetch(descURL).then(r=>r.json()).then(d=>{
     fetch(iconURL,{method:"HEAD"}).then(res=>{
-      let icon="";
-      if(res.ok){
-        icon=`<div class="iconBox"><img src="${iconURL}"></div>`;
-      }
+      let icon = res.ok
+        ? `<img src="${iconURL}">`
+        : defaultIcon;
 
-      document.getElementById("tools").innerHTML+=`
+      document.getElementById("tools").innerHTML += `
         <div class="card" onclick="openTool('${name}')">
           <div class="index">#${index}</div>
-          ${icon}
+          <div class="iconBox">${icon}</div>
           <div class="title">${d.title}</div>
           <div class="about">${d.about}</div>
         </div>
