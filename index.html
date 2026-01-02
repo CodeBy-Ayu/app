@@ -2,24 +2,21 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Tool by Lucky</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Stack+Sans+Notch:wght@200..700&family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+<title>Tool Board</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Stack+Sans+Notch:wght@200..700&family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+
 <style>
 body{
   margin:0;
-  font-family: "Stack Sans Notch", sans-serif;
+  font-family:"Stack Sans Notch",system-ui;
   background:#0A0A0A;
   color:#fff;
 }
-.header{
-  padding:30px;
-}
-h1{
-  color:#8b5cf6;
-  font-size:32px;
-}
+.header{padding:30px;}
+h1{color:#8b5cf6;font-size:32px;}
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
@@ -35,14 +32,13 @@ h1{
   transition:.25s;
   max-width:300px;
   width:100%;
-  border:3px solid #2a2a2a;
+  border:1px solid #2a2a2a;
   position:relative;
 }
 .card:hover{
   transform:translateY(-5px);
   box-shadow:0 0 40px rgba(139,92,246,.4);
 }
-
 .index{
   position:absolute;
   top:12px;
@@ -51,7 +47,6 @@ h1{
   font-weight:bold;
   font-size:14px;
 }
-
 .iconBox{
   width:48px;
   height:48px;
@@ -65,71 +60,77 @@ h1{
 .iconBox img{
   width:26px;
   height:26px;
-  filter: brightness(0) saturate(100%) invert(41%) sepia(71%) saturate(660%) hue-rotate(230deg);
+  filter:brightness(0) saturate(100%) invert(41%) sepia(71%) saturate(660%) hue-rotate(230deg);
 }
-
-.title{
-  font-size:20px;
-  margin-bottom:8px;
-}
-.about{
-  color:#aaa;
-  font-size:14px;
-}
+.title{font-size:20px;margin-bottom:8px;}
+.about{color:#aaa;font-size:14px;}
 </style>
 </head>
+
 <body>
 
 <div class="header">
   <h1>Tool Board</h1>
-  <p>Welcome to my Web Tools control center</p>
+  <p>Welcome to your Web Tools control center</p>
 </div>
 
 <div class="grid" id="tools">Loading...</div>
 
 <script>
 const host = location.hostname;
-const path = location.pathname.split("/").filter(Boolean);
-
 const user = host.replace(".github.io", "");
-const repo = "tools";
+const repoMatch = window.location.pathname.match(/^\/([^/]+)/);
+const repo = repoMatch ? repoMatch[1] : "";
 
-const base = `https://api.github.com/repos/${user}/${repo}/contents/tools`;
+let branch = "main";
+let baseAPI = "";
 
-fetch(base)
-.then(r=>r.json())
-.then(folders=>{
-  document.getElementById("tools").innerHTML="";
-  let i = 1;
-  folders.forEach(f=>{
-    if(f.type==="dir"){
-      loadTool(f.name, i++);
+async function detectBranch(){
+  for(const b of ["main","master"]){
+    const r = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/tools?ref=${b}`);
+    if(r.ok){
+      branch = b;
+      baseAPI = `https://api.github.com/repos/${user}/${repo}/contents/tools?ref=${b}`;
+      return true;
     }
-  });
-});
+  }
+  return false;
+}
 
-function loadTool(name, index){
-  const descURL = `https://raw.githubusercontent.com/${user}/${repo}/main/tools/${name}/description.json`;
-  const iconURL = `https://raw.githubusercontent.com/${user}/${repo}/main/tools/${name}/icon.svg`;
+async function loadDashboard(){
+  const ok = await detectBranch();
+  if(!ok){
+    document.getElementById("tools").innerHTML="❌ tools folder not found";
+    return;
+  }
+
+  const res = await fetch(baseAPI);
+  const folders = await res.json();
+  document.getElementById("tools").innerHTML="";
+  let i=1;
+
+  folders.forEach(f=>{
+    if(f.type==="dir") loadTool(f.name,i++);
+  });
+}
+
+function loadTool(name,index){
+  const descURL = `https://raw.githubusercontent.com/${user}/${repo}/${branch}/tools/${name}/description.json`;
+  const iconURL = `https://raw.githubusercontent.com/${user}/${repo}/${branch}/tools/${name}/icon.svg`;
 
   fetch(descURL)
   .then(r=>r.json())
   .then(d=>{
-    fetch(iconURL, {method:"HEAD"})
-    .then(res=>{
-      let iconHTML="";
+    fetch(iconURL,{method:"HEAD"}).then(res=>{
+      let icon="";
       if(res.ok){
-        iconHTML = `
-          <div class="iconBox">
-            <img src="${iconURL}">
-          </div>
-        `;
+        icon=`<div class="iconBox"><img src="${iconURL}"></div>`;
       }
 
-      document.getElementById("tools").innerHTML += `
+      document.getElementById("tools").innerHTML+=`
         <div class="card" onclick="openTool('${name}')">
           <div class="index">#${index}</div>
-          ${iconHTML}
+          ${icon}
           <div class="title">${d.title}</div>
           <div class="about">${d.about}</div>
         </div>
@@ -139,8 +140,10 @@ function loadTool(name, index){
 }
 
 function openTool(n){
-  location.href = "tools/"+n+"/";
+  location.href="tools/"+n+"/";
 }
+
+loadDashboard();
 </script>
 
 </body>
