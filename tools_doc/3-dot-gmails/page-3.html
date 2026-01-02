@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Tool by Lucky</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Stack+Sans+Notch:wght@200..700&family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+<style>
+body{
+  margin:0;
+  font-family: "Stack Sans Notch", sans-serif;
+  background:#0A0A0A;
+  color:#fff;
+}
+.header{
+  padding:30px;
+}
+h1{
+  color:#8b5cf6;
+  font-size:32px;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:20px;
+  padding:30px;
+}
+.card{
+  background:linear-gradient(145deg,#111,#131313);
+  border-radius:16px;
+  padding:20px;
+  box-shadow:0 0 25px rgba(139,92,246,.15);
+  cursor:pointer;
+  transition:.25s;
+  max-width:300px;
+  width:100%;
+  border:1px solid #2a2a2a;
+  position:relative;
+}
+.card:hover{
+  transform:translateY(-5px);
+  box-shadow:0 0 40px rgba(139,92,246,.4);
+}
+
+.index{
+  position:absolute;
+  top:12px;
+  right:15px;
+  color:#8b5cf6;
+  font-weight:bold;
+  font-size:14px;
+}
+
+.iconBox{
+  width:48px;
+  height:48px;
+  background:#2B2140;
+  border-radius:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:15px;
+}
+.iconBox img{
+  width:26px;
+  height:26px;
+  filter: brightness(0) saturate(100%) invert(41%) sepia(71%) saturate(660%) hue-rotate(230deg);
+}
+
+.title{
+  font-size:20px;
+  margin-bottom:8px;
+}
+.about{
+  color:#aaa;
+  font-size:14px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Tool Board</h1>
+  <p>Welcome to my Web Tools control center</p>
+</div>
+
+<div class="grid" id="tools">Loading...</div>
+
+<script>
+const host = location.hostname;
+const path = location.pathname.split("/").filter(Boolean);
+
+const user = host.replace(".github.io", "");
+const repo = "test";
+
+const base = `https://api.github.com/repos/${user}/${repo}/contents/tools`;
+
+fetch(base)
+.then(r=>r.json())
+.then(folders=>{
+  document.getElementById("tools").innerHTML="";
+  let i = 1;
+  folders.forEach(f=>{
+    if(f.type==="dir"){
+      loadTool(f.name, i++);
+    }
+  });
+});
+
+function loadTool(name, index){
+  const descURL = `https://raw.githubusercontent.com/${user}/${repo}/main/tools/${name}/description.json`;
+  const iconURL = `https://raw.githubusercontent.com/${user}/${repo}/main/tools/${name}/icon.svg`;
+
+  fetch(descURL)
+  .then(r=>r.json())
+  .then(d=>{
+    fetch(iconURL, {method:"HEAD"})
+    .then(res=>{
+      let iconHTML="";
+      if(res.ok){
+        iconHTML = `
+          <div class="iconBox">
+            <img src="${iconURL}">
+          </div>
+        `;
+      }
+
+      document.getElementById("tools").innerHTML += `
+        <div class="card" onclick="openTool('${name}')">
+          <div class="index">#${index}</div>
+          ${iconHTML}
+          <div class="title">${d.title}</div>
+          <div class="about">${d.about}</div>
+        </div>
+      `;
+    });
+  });
+}
+
+function openTool(n){
+  location.href = "tools/"+n+"/";
+}
+</script>
+
+</body>
+</html>
